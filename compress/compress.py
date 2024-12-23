@@ -32,7 +32,7 @@ class BackupSelectionApp(App):
         self.query_one("#backup_button").label = f"Backup {len(selected_dirs)} Selected Directories"
 
     def on_button_pressed(self, event: Button.Pressed):
-        selected_dirs = [option.value for option in self.query_one(SelectionList).selected]
+        selected_dirs = [option for option in self.query_one(SelectionList).selected]
         print("Selected directories for backup:", selected_dirs)
         self.exit(selected_dirs)
 
