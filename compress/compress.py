@@ -1,9 +1,29 @@
+"""
+Usage:
+    compress [DISK]
+"""
+
 import os
+from compress import utils
+from docopt import docopt
 from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.widgets import Header, Footer, SelectionList, Button
 from textual.widgets.selection_list import Selection
 from textual.screen import Screen
+
+class ManualSelectionData:
+    def __init__(self, dirs):
+        self.dirs = []
+
+class GuidedSelectionData:
+    def __init__(self, funcs):
+        self.funs = funcs
+
+
+def backup_firefox():
+    print("your mom")
+
 
 class ManualSelectionScreen(Screen):
     CSS = """
@@ -33,8 +53,10 @@ class ManualSelectionScreen(Screen):
 
     def on_button_pressed(self, event: Button.Pressed):
         selected_dirs = [option for option in self.query_one(SelectionList).selected]
+        home_directory = os.path.expanduser('~')
+        selected_dirs = list(map(lambda a: os.path.join(home_directory, a), selected_dirs))
         #self.app.pop_screen()
-        self.app.exit(selected_dirs)
+        self.app.exit(ManualSelectionData(selected_dirs))
 
 class GuidedSelectionScreen(Screen):
     CSS = """
@@ -55,16 +77,18 @@ class GuidedSelectionScreen(Screen):
         selection_list.border_title = "Select options for backup"
 
         # Add detection code here
-        selection_list.add_option(Selection("your mom", "your dad"))
+        home_directory = os.path.expanduser('~')
+        if os.path.exists(os.path.join(home_directory, ".mozilla")):
+            selection_list.add_option(Selection("Firefox", backup_firefox))
 
     def on_selection_list_selected(self, event: SelectionList.selected):
         selected_dirs = [option.value for option in self.query_one(SelectionList).selected]
         self.query_one("#backup_button").label = f"Backup Using {len(selected_dirs)} Options"
 
     def on_button_pressed(self, event: Button.Pressed):
-        selected_dirs = [option for option in self.query_one(SelectionList).selected]
+        selected_options = [option for option in self.query_one(SelectionList).selected]
         #self.app.pop_screen()
-        self.app.exit(selected_dirs)
+        self.app.exit(GuidedSelectionData(selected_options))
 
 class AppSwitcher(App):
     CSS = """
@@ -93,15 +117,28 @@ class AppSwitcher(App):
     def switch_to_app(self, app_name: str) -> None:
         if app_name == "Manual":
             backup_app = ManualSelectionScreen()
-            self.push_screen(backup_app)
+            _ = self.push_screen(backup_app)
         else:
             backup_app = GuidedSelectionScreen()
-            self.push_screen(backup_app)
+            _ = self.push_screen(backup_app)
 
 
 def main():
-    #app = BackupSelectionApp()
+    args = docopt(__doc__)
     app = AppSwitcher()
-    selected_directories = app.run()
-    print("Final selection:", selected_directories)
+    option = app.run()
+
+    mount_point = utils.mount_disk(args["DISK"])
+    if mount_point != None:
+        print(f"Mounted {mount_point}")
+        print(f"Is linux partition?")
+        print(utils.check_if_linux_home(mount_point, "adhoc"))
+        res = utils.unmount_disk(mount_point)
+        if res:
+            print(f"Unmounted {mount_point}")
+        else:
+            print("Error on dismount.")
+    else:
+        print("Error on mount.")
+
 
