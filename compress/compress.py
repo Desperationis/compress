@@ -5,7 +5,7 @@ from textual.widgets import Header, Footer, SelectionList, Button
 from textual.widgets.selection_list import Selection
 from textual.screen import Screen
 
-class BackupSelectionScreen(Screen):
+class ManualSelectionScreen(Screen):
     CSS = """
     SelectionList {
         width: 100%;
@@ -33,9 +33,38 @@ class BackupSelectionScreen(Screen):
 
     def on_button_pressed(self, event: Button.Pressed):
         selected_dirs = [option for option in self.query_one(SelectionList).selected]
-        print("Selected directories for backup:", selected_dirs)
-        self.app.pop_screen()
+        #self.app.pop_screen()
+        self.app.exit(selected_dirs)
 
+class GuidedSelectionScreen(Screen):
+    CSS = """
+    SelectionList {
+        width: 100%;
+        height: 80%;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield SelectionList()
+        yield Button("Backup Using Options", id="backup_button")
+        yield Footer()
+
+    def on_mount(self):
+        selection_list = self.query_one(SelectionList)
+        selection_list.border_title = "Select options for backup"
+
+        # Add detection code here
+        selection_list.add_option(Selection("your mom", "your dad"))
+
+    def on_selection_list_selected(self, event: SelectionList.selected):
+        selected_dirs = [option.value for option in self.query_one(SelectionList).selected]
+        self.query_one("#backup_button").label = f"Backup Using {len(selected_dirs)} Options"
+
+    def on_button_pressed(self, event: Button.Pressed):
+        selected_dirs = [option for option in self.query_one(SelectionList).selected]
+        #self.app.pop_screen()
+        self.app.exit(selected_dirs)
 
 class AppSwitcher(App):
     CSS = """
@@ -50,23 +79,24 @@ class AppSwitcher(App):
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         yield Container(
-            Button("App One", id="app_one"),
-            Button("App Two", id="app_two"),
+            Button("Manual", id="manual"),
+            Button("Guided", id="guided"),
         )
         yield Footer()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "app_one":
-            self.switch_to_app("App One")
-        elif event.button.id == "app_two":
-            self.switch_to_app("App Two")
+        if event.button.id == "manual":
+            self.switch_to_app("Manual")
+        elif event.button.id == "guided":
+            self.switch_to_app("Guided")
 
     def switch_to_app(self, app_name: str) -> None:
-        if app_name == "App One":
-            backup_app = BackupSelectionScreen()
+        if app_name == "Manual":
+            backup_app = ManualSelectionScreen()
             self.push_screen(backup_app)
         else:
-            self.sub_title = f"Switched to {app_name}"
+            backup_app = GuidedSelectionScreen()
+            self.push_screen(backup_app)
 
 
 def main():
