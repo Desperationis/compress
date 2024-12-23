@@ -1,6 +1,6 @@
 """
 Usage:
-    compress [DISK]
+    compress <DISK>
 """
 
 import os
@@ -20,9 +20,21 @@ class GuidedSelectionData:
     def __init__(self, funcs):
         self.funs = funcs
 
+home_directory = os.path.expanduser('~')
 
-def backup_firefox():
-    print("your mom")
+
+# How it works is that we just copy everything into a directory.
+def backup_firefox(tmp_directory):
+    target = ".mozilla"
+    print(f"Backing up {target} to {tmp_directory}")
+    path = os.path.join(home_directory, target)
+    utils.copy_dir(path, tmp_directory)
+
+def backup_ssh(tmp_directory):
+    target = ".ssh"
+    print(f"Backing up {target} to {tmp_directory}")
+    path = os.path.join(home_directory, target)
+    utils.copy_dir(path, tmp_directory)
 
 
 class ManualSelectionScreen(Screen):
@@ -42,7 +54,6 @@ class ManualSelectionScreen(Screen):
     def on_mount(self):
         selection_list = self.query_one(SelectionList)
         selection_list.border_title = "Select directories to backup"
-        home_directory = os.path.expanduser('~')
         directories = [d for d in os.listdir(home_directory) if os.path.isdir(os.path.join(home_directory, d))]
         for directory in directories:
             selection_list.add_option(Selection(directory, directory))
@@ -53,7 +64,6 @@ class ManualSelectionScreen(Screen):
 
     def on_button_pressed(self, event: Button.Pressed):
         selected_dirs = [option for option in self.query_one(SelectionList).selected]
-        home_directory = os.path.expanduser('~')
         selected_dirs = list(map(lambda a: os.path.join(home_directory, a), selected_dirs))
         #self.app.pop_screen()
         self.app.exit(ManualSelectionData(selected_dirs))
@@ -77,9 +87,10 @@ class GuidedSelectionScreen(Screen):
         selection_list.border_title = "Select options for backup"
 
         # Add detection code here
-        home_directory = os.path.expanduser('~')
         if os.path.exists(os.path.join(home_directory, ".mozilla")):
             selection_list.add_option(Selection("Firefox", backup_firefox))
+        if os.path.exists(os.path.join(home_directory, ".ssh")):
+            selection_list.add_option(Selection("SSH", backup_ssh))
 
     def on_selection_list_selected(self, event: SelectionList.selected):
         selected_dirs = [option.value for option in self.query_one(SelectionList).selected]
@@ -128,17 +139,21 @@ def main():
     app = AppSwitcher()
     option = app.run()
 
-    mount_point = utils.mount_disk(args["DISK"])
-    if mount_point != None:
-        print(f"Mounted {mount_point}")
-        print(f"Is linux partition?")
-        print(utils.check_if_linux_home(mount_point, "adhoc"))
-        res = utils.unmount_disk(mount_point)
-        if res:
-            print(f"Unmounted {mount_point}")
+    if isinstance(option, GuidedSelectionData):
+        for i in option.funs:
+            i("/tmp/hehhehehe")
+
+
+    if isinstance(option, ManualSelectionData):
+        mount_point = utils.mount_disk(args["<DISK>"])
+        if mount_point != None:
+            print(f"Mounted {mount_point}")
+            print(f"Is linux partition?")
+            print(utils.check_if_linux_home(mount_point, "adhoc"))
+            res = utils.unmount_disk(mount_point)
+            if res:
+                print(f"Unmounted {mount_point}")
+            else:
+                print("Error on dismount.")
         else:
-            print("Error on dismount.")
-    else:
-        print("Error on mount.")
-
-
+            print("Error on mount.")

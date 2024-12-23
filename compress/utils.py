@@ -2,6 +2,7 @@ import os
 import subprocess
 import random
 import string
+import shutil
 
 def mount_disk(device: str) -> str | None:
     if os.path.ismount("/mnt"):
@@ -41,4 +42,24 @@ def unmount_disk(mount_point: str) -> bool:
 def check_if_linux_home(mount_point: str, user: str):
     home_dir = os.path.join(mount_point, f"/home/{user}/")
     return os.path.exists(home_dir)
+
+def destroy_dir(src) -> bool:
+    try:
+        if os.path.exists(src):
+            _ = subprocess.check_call(["rm", "-rf", src])
+    except:
+        return False
+
+
+    return True
+
+def copy_dir(src, dst) -> bool:
+    try:
+        _ = subprocess.check_call(["cp", "-r", src, dst])
+
+    except:
+        return False
+
+
+    return True
 
