@@ -62,23 +62,25 @@ def compress(src, dst) -> int:
 
     return process.returncode
 
-file = "2019_10_02_6ec9b1538574ec7.mp4"
-if has_been_compressed(file):
-    print(f"[bold green]{file} has already been compressed.")
-    sys.exit(0)
-else:
-    print(f"[cyan]{file} hasn't been compressed. Compressing...")
 
-_, ext = os.path.splitext(file)
-returncode = compress(file, partial_file + ext)
-if returncode == 0:
-    og_size = os.path.getsize(file)
-    compressed_size = os.path.getsize(partial_file + ext)
+def main():
+    file = "2019_10_02_6ec9b1538574ec7.mp4"
+    if has_been_compressed(file):
+        print(f"[bold green]{file} has already been compressed.")
+        sys.exit(0)
+    else:
+        print(f"[cyan]{file} hasn't been compressed. Compressing...")
 
-    mark_as_compressed(partial_file + ext)
-    os.replace(partial_file + ext, file)
-    print(f"[bold green]{file} has been compressed. It's {round((compressed_size / og_size) * 100)}% the size.")
-else:
-    print("[bold red]Compress failed.[/bold red]")
+    _, ext = os.path.splitext(file)
+    returncode = compress(file, partial_file + ext)
+    if returncode == 0:
+        og_size = os.path.getsize(file)
+        compressed_size = os.path.getsize(partial_file + ext)
+
+        mark_as_compressed(partial_file + ext)
+        os.replace(partial_file + ext, file)
+        print(f"[bold green]{file} has been compressed. It's {round((compressed_size / og_size) * 100)}% the size.")
+    else:
+        print("[bold red]Compress failed.[/bold red]")
 
 
