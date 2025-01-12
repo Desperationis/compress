@@ -22,4 +22,4 @@ Homepage = "https://github.com/Desperationis/compress"
 Issues = "https://github.com/Desperationis/compress/issues"
 
 [project.scripts]
-historian = "compress:main"
+compress = "compress:main"

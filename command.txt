@@ -1,1 +1,1 @@
-ffmpeg -i %s -vcodec libx265 -map_metadata 0 -crf 24 %s
+ffmpeg -i "%s" -vcodec libx265 -map_metadata 0 -crf 24 "%s"

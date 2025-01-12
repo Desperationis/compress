@@ -1,7 +1,14 @@
+"""compress
+
+Usage:
+  compress <folder>
+"""
+
+from docopt import docopt
+from rich import print
 import subprocess
 import threading
 import signal
-from rich import print
 import sys
 import os
 
@@ -62,25 +69,46 @@ def compress(src, dst) -> int:
 
     return process.returncode
 
+def find_files(directory, extensions):
+    matching_files = []
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if any(file.endswith(ext) for ext in extensions):
+                matching_files.append(os.path.join(root, file))
+    return matching_files
 
 def main():
-    file = "2019_10_02_6ec9b1538574ec7.mp4"
-    if has_been_compressed(file):
-        print(f"[bold green]{file} has already been compressed.")
-        sys.exit(0)
-    else:
-        print(f"[cyan]{file} hasn't been compressed. Compressing...")
+    args = docopt(__doc__)
+    directory = args["<folder>"]
+    supported_extensions = [ ".mp4", ".mov", ]
+    capitalized_ext = [item.upper() for item in supported_extensions]
+    supported_extensions.extend(capitalized_ext)
 
-    _, ext = os.path.splitext(file)
-    returncode = compress(file, partial_file + ext)
-    if returncode == 0:
-        og_size = os.path.getsize(file)
-        compressed_size = os.path.getsize(partial_file + ext)
+    files = find_files(directory, supported_extensions)
+    for file in files:
+        if has_been_compressed(file):
+            print(f"[bold green]{file} has already been compressed.[/bold green]")
+            continue
+        else:
+            print(f"[cyan]{file} hasn't been compressed. Compressing...[/cyan]")
 
-        mark_as_compressed(partial_file + ext)
-        os.replace(partial_file + ext, file)
-        print(f"[bold green]{file} has been compressed. It's {round((compressed_size / og_size) * 100)}% the size.")
-    else:
-        print("[bold red]Compress failed.[/bold red]")
+        _, ext = os.path.splitext(file)
+        returncode = compress(file, partial_file + ext)
+        if returncode == 0:
+            og_size = os.path.getsize(file)
+            compressed_size = os.path.getsize(partial_file + ext)
+
+            if compressed_size / og_size > 0.8:
+                # Not enough benefit for decreased quality
+                mark_as_compressed(file)
+                os.remove(partial_file + ext)
+                print(f"[bold cyan]{file} is untouched, it's at optimal quality; Compressed version is is {round((compressed_size / og_size) * 100)}% the size.[/bold cyan]")
+                continue
+
+            mark_as_compressed(partial_file + ext)
+            os.replace(partial_file + ext, file)
+            print(f"[bold green]{file} has been compressed. It's {round((compressed_size / og_size) * 100)}% the size.[/bold green]")
+        else:
+            print("[bold red]Compress failed.[/bold red]")
 
 
